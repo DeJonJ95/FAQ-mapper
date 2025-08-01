@@ -6,15 +6,6 @@ import { initializeApp } from "firebase/app";
 import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, writeBatch, serverTimestamp, query, orderBy } from "firebase/firestore";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 
-// --- Firebase Configuration (Provided by Environment) ---
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "...", authDomain: "...", projectId: "...", storageBucket: "...", messagingSenderId: "...", appId: "..." };
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-faq-mapper';
-
-// --- Initialize Firebase ---
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
 // --- SVG Icons ---
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
@@ -25,6 +16,11 @@ const Node = ({ node, children, onUpdate, onAddChild, onDelete, onDragStart, onD
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(node.text);
   const inputRef = useRef(null);
+  const nodeRef = useRef(null);
+
+  useEffect(() => {
+    setText(node.text);
+  }, [node.text]);
 
   useEffect(() => {
     if (isEditing) inputRef.current?.focus();
@@ -49,6 +45,7 @@ const Node = ({ node, children, onUpdate, onAddChild, onDelete, onDragStart, onD
 
   return (
     <div
+      ref={nodeRef}
       className={nodeClasses}
       onDrop={(e) => onDrop(e, node.id)}
       onDragEnter={(e) => onDragEnter(e, node.id)}
@@ -102,18 +99,33 @@ const App = () => {
   const [nodes, setNodes] = useState([]);
   const [draggingId, setDraggingId] = useState(null);
   const [dropTargetId, setDropTargetId] = useState(null);
+  const [isReady, setIsReady] = useState(false); // ADDED: Auth readiness state
   const draggedNodeRef = useRef(null);
+  const dropZoneRef = useRef(null);
+  const dragLeaveTimeoutRef = useRef(null);
+  
+  const firestoreRef = useRef(null);
 
   useEffect(() => {
-    // This listener will fire whenever the user's sign-in state changes.
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+    if (!firebaseConfig) {
+        console.error("Firebase config not found.");
+        return;
+    }
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-faq-mapper';
+    
+    firestoreRef.current = { db, appId };
+
     const authUnsubscribe = onAuthStateChanged(auth, (user) => {
         let firestoreUnsubscribe;
-
         if (user) {
-            // User is signed in, set up the Firestore listener.
+            setIsReady(true); // ADDED: Set ready state on auth success
             const categoriesCol = collection(db, "apps", appId, "categories");
             const q = query(categoriesCol, orderBy("createdAt"));
-            
             firestoreUnsubscribe = onSnapshot(q, (snapshot) => {
                 const newNodes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setNodes(newNodes);
@@ -121,24 +133,18 @@ const App = () => {
                 console.error("Firestore snapshot error:", error);
             });
         } else {
-            // User is signed out. Try to sign them in.
+            setIsReady(false); // ADDED: Set not-ready state
             signInAnonymously(auth).catch(error => {
                 console.error("Anonymous sign-in failed:", error);
             });
         }
-
-        // When the auth state changes again (e.g., on logout),
-        // clean up the previous Firestore listener before setting up a new one.
         return () => {
-            if (firestoreUnsubscribe) {
-                firestoreUnsubscribe();
-            }
+            if (firestoreUnsubscribe) firestoreUnsubscribe();
         };
     });
 
-    // When the component unmounts, clean up the auth listener.
     return () => authUnsubscribe();
-  }, []); // Empty dependency array means this effect runs only once on mount.
+  }, []);
 
   const nodesMap = useMemo(() => new Map(nodes.map(node => [node.id, node])), [nodes]);
 
@@ -175,7 +181,7 @@ const App = () => {
     setDropTargetId(null);
 
     const sourceId = draggedNodeRef.current;
-    if (!sourceId || sourceId === targetId) return;
+    if (!sourceId || sourceId === targetId || !firestoreRef.current) return;
 
     const isDescendant = (parentId, childId) => {
         let current = nodesMap.get(childId);
@@ -191,16 +197,21 @@ const App = () => {
         return;
     }
     
+    const { db, appId } = firestoreRef.current;
     const docRef = doc(db, "apps", appId, "categories", sourceId);
     await updateDoc(docRef, { parentId: targetId });
   };
 
   const updateNode = async (id, newProps) => {
+    if (!firestoreRef.current) return;
+    const { db, appId } = firestoreRef.current;
     const docRef = doc(db, "apps", appId, "categories", id);
     await updateDoc(docRef, newProps);
   };
 
   const addChildNode = async (parentId) => {
+    if (!firestoreRef.current) return;
+    const { db, appId } = firestoreRef.current;
     await addDoc(collection(db, "apps", appId, "categories"), {
         text: 'New Sub-Category',
         parentId: parentId,
@@ -209,6 +220,8 @@ const App = () => {
   };
 
   const deleteNode = async (idToDelete) => {
+    if (!firestoreRef.current) return;
+    const { db, appId } = firestoreRef.current;
     const batch = writeBatch(db);
     const allDescendants = new Set();
     const findDescendants = (parentId) => {
@@ -229,6 +242,11 @@ const App = () => {
   };
   
   const addTopLevelNode = async () => {
+    if (!firestoreRef.current) {
+        console.error("Firestore is not initialized yet.");
+        return;
+    }
+    const { db, appId } = firestoreRef.current;
     await addDoc(collection(db, "apps", appId, "categories"), {
         text: 'New Top-Level Category',
         parentId: '__root__',
@@ -268,6 +286,7 @@ const App = () => {
       <main>
         {buildTree('__root__')}
         <div 
+          ref={dropZoneRef}
           id="root-drop-zone"
           className={dropTargetId === '__root__' ? 'drop-target-highlight' : ''}
           onDrop={(e) => handleDrop(e, '__root__')}
@@ -281,9 +300,10 @@ const App = () => {
       <footer id="app-footer">
           <button 
               onClick={addTopLevelNode}
+              disabled={!isReady}
               id="add-category-button"
           >
-              Add Top-Level Category
+              {isReady ? 'Add Top-Level Category' : 'Loading...'}
           </button>
       </footer>
     </div>

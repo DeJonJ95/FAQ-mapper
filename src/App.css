@@ -99,6 +99,12 @@ body {
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
+/* ADDED: Ensure dragging state is completely removed */
+.node:not(.is-dragging) {
+  opacity: 1 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
 .node.node-root {
     border-left: 4px solid var(--primary-color);
 }
@@ -182,8 +188,9 @@ body {
 
 /* --- Drop Target and Loading Styles --- */
 .drop-target-highlight {
-  outline: 2px dashed var(--secondary-color);
+  outline: 2px dashed var(--secondary-color) !important;
   outline-offset: 4px;
+  background-color: rgba(44, 120, 115, 0.05) !important;
 }
 
 #root-drop-zone {
@@ -198,8 +205,8 @@ body {
 }
 
 #root-drop-zone.drop-target-highlight {
-  background-color: #e0f2f1;
-  border-color: var(--secondary-color);
+  background-color: #e0f2f1 !important;
+  border-color: var(--secondary-color) !important;
   color: var(--primary-color);
 }
 
