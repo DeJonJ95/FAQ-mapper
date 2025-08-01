@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   server: {
     allowedHosts: [
-      '5173-dejonj95-faqmapper-z23tff9k1x6.ws-us120.gitpod.io',
+      '5175-dejonj95-faqmapper-z23tff9k1x6.ws-us120.gitpod.io',
       // Add other allowed hosts if necessary, e.g., 'localhost', '127.0.0.1'
     ],
   },
