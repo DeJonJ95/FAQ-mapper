@@ -1,0 +1,167 @@
+/* --- Global Styles & Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #004445;
+  --secondary-color: #2c7873;
+  --light-accent-color: #93c5c9;
+  --bg-color: #f0f4f4;
+  --card-bg-color: #ffffff;
+  --text-color: #333333;
+  --border-color: #e0e0e0;
+  --font-family: 'Poppins', sans-serif;
+}
+
+/* --- Centering Fix: Updated Body Styles --- */
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  margin: 0;
+  color: var(--text-color);
+  
+  /* Make body a flex container to center its child */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Align to top */
+  min-height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box; /* Ensures padding is included in height/width calculation */
+}
+
+/* --- App Layout --- */
+#app-container {
+  width: 100%; /* App container will fill the padded space */
+  max-width: 900px;
+  /* margin: 0 auto; is no longer needed */
+}
+
+#app-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+#app-header h1 {
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  font-weight: 700;
+  margin: 0;
+}
+
+#app-header p {
+  font-size: 1.125rem;
+  color: var(--secondary-color);
+  margin-top: 0.5rem;
+}
+
+#app-footer {
+    text-align: center;
+    margin-top: 2.5rem;
+}
+
+#add-category-button {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#add-category-button:hover {
+    background-color: var(--secondary-color);
+    box-shadow: 0 7px 14px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* --- Node Component Styling --- */
+.node {
+  background-color: var(--card-bg-color);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.node:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.node.node-root {
+    border-left: 4px solid var(--primary-color);
+}
+
+.node-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.node-text {
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: text;
+  flex-grow: 1;
+  margin: 0;
+}
+
+.node-input {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--light-accent-color);
+    font-size: 1.1rem;
+    font-family: var(--font-family);
+}
+
+.node-input:focus {
+    outline: 2px solid var(--secondary-color);
+    border-color: transparent;
+}
+
+.node-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.node-button {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.node-button.add-button {
+    color: var(--primary-color);
+}
+.node-button.add-button:hover {
+    background-color: #e0f2f1;
+}
+
+.node-button.delete-button {
+    color: #ef4444;
+}
+.node-button.delete-button:hover {
+    background-color: #fee2e2;
+}
+
+.node-children {
+  padding-left: 1.5rem;
+  margin-top: 1rem;
+  border-left: 2px solid var(--light-accent-color);
+  margin-left: 0.5rem;
+}
